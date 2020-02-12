@@ -1,18 +1,19 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning;
+namespace Simianbv\Search;
 
-use App\Lightning\Contracts\RelationGuardInterface;
-use App\Services\Acl\Acl;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
+use Simianbv\Search\Contracts\RelationGuardInterface;
 
 /**
  * @class   ApiResource
@@ -131,7 +132,10 @@ class ApiResource extends JsonResource
                 $parts = array_map('trim', explode(',', $withRequest));
                 foreach ($parts as $with) {
                     $guardedRelations = $this->builder->getModel()::getGuardedRelations();
-                    if (array_key_exists($with, $guardedRelations) && Acl::validate($guardedRelations[$with])) {
+
+                    // @todo: add a way to verify the ACL "Acl::validate($guardedRelations[$with])"
+
+                    if (array_key_exists($with, $guardedRelations)) {
                         $this->builder->with($with);
                     }
                 }

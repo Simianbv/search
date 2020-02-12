@@ -1,18 +1,22 @@
 <?php
+
 /**
- * The Base class to use for resource collections, should implement 2 fields, i.e. the current_page and the per_page filters
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning;
+namespace Simianbv\Search;
 
-use App\Lightning\Contracts\SearchResultInterface;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Simianbv\Search\Contracts\SearchResultInterface;
 
 
 /**
- * @class   ApiCollection
- * @package App\Http\Resources
+ * @description The Base class to use for resource collections, should implement 2 fields,
+ * i.e. the current_page and the per_page filters
+ *
+ * @class       ApiCollection
+ * @package     App\Http\Resources
  */
 class ApiCollection extends ResourceCollection
 {
@@ -30,7 +34,7 @@ class ApiCollection extends ResourceCollection
      * GroupCollection constructor.
      *
      * @param SearchResult|mixed $result
-     * @param callable|null $formatter
+     * @param callable|null      $formatter
      */
     public function __construct($result, $formatter = null)
     {

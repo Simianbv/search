@@ -1,19 +1,20 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
+namespace Simianbv\Search\Search;
 
-namespace App\Lightning\Search;
-
-use App\Lightning\Contracts\FilterInterface;
-use App\Lightning\FilterGenerator;
+use Simianbv\Search\Contracts\FilterInterface;
+use Simianbv\Search\FilterGenerator;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * @class   Search
- * @package App\Lightning\Search
+ * @package Simianbv\Search\Search
  */
 class Search implements FilterInterface
 {

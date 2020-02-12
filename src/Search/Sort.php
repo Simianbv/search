@@ -1,16 +1,18 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning\Search;
+namespace Simianbv\Search\Search;
 
-use App\Lightning\Contracts\FilterInterface;
+use Simianbv\Search\Contracts\FilterInterface;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * @class   Sort
- * @package App\Lightning\Search
+ * @package Simianbv\Search\Search
  */
 class Sort implements FilterInterface
 {

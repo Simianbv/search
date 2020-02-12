@@ -1,13 +1,15 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning\Contracts;
+namespace Simianbv\Search\Contracts;
 
 /**
  * @interface SearchResultInterface
- * @package   App\Lightning\Contracts
+ * @package   Simianbv\Search\Contracts
  */
 interface SearchResultInterface
 {

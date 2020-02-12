@@ -1,27 +1,29 @@
 <?php
+
+
+
 /**
  * The SearchFilter class should be used to filter trough tabular data like offset, pagination and sorting
  * Copyright (c) 2019.
  */
 
-namespace App\Lightning;
+namespace Simianbv\Search;
 
-use App\Lightning\Contracts\RelationGuardInterface;
-use App\Lightning\Contracts\SearchResultInterface;
-use App\Lightning\Exceptions\SearchException;
-use App\Services\Acl\Acl;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Simianbv\Search\Contracts\RelationGuardInterface;
+use Simianbv\Search\Contracts\SearchResultInterface;
+use Simianbv\Search\Exceptions\SearchException;
 
 /**
  * Class SearchResult
  *
  * @method static apply($target, $request = null)
- * @package App\Lightning
+ * @package Simianbv\Search
  */
 class SearchResult implements SearchResultInterface
 {
@@ -151,7 +153,9 @@ class SearchResult implements SearchResultInterface
                 $parts = array_map('trim', explode(',', $withRequest));
                 foreach ($parts as $with) {
                     $guardedRelations = $modelName::getGuardedRelations();
-                    if (array_key_exists($with, $guardedRelations) && Acl::validate($guardedRelations[$with])) {
+
+                    // @todo: add a way to include ACL verification in here
+                    if (array_key_exists($with, $guardedRelations)) {
                         $builder->with($with);
                     }
                 }

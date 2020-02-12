@@ -1,15 +1,17 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning\Exceptions;
+namespace Simianbv\Search\Exceptions;
 
 use Exception;
 
 /**
  * @class   SearchException
- * @package App\Lightning\Exceptions
+ * @package Simianbv\Search\Exceptions
  */
 class SearchException extends Exception
 {

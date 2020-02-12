@@ -21,7 +21,10 @@
   "autoload": {
     "psr-4": {
       "Simianbv\\Search\\": "src/"
-    }
+    },
+    "files": [
+      "src/Helpers/cache.php"
+    ]
   },
   "extra": {
     "laravel": {

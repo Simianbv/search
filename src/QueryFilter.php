@@ -1,20 +1,21 @@
 <?php
+
 /**
- * Extrudes the filterable data from the request query and sorts and labels them accordingly.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning;
+namespace Simianbv\Search;
 
 use Illuminate\Http\Request;
 
 /**
- * Class QueryFilter
- *
- * @package App\Lightning
+ * @description Etract the filterable data from the request query and sorts and labels them accordingly.
+ * @class       QueryFilter
+ * @package     Simianbv\Search
  */
 class QueryFilter
 {
-
     /**
      * Stores all the defaults we want to use in building up our Query in the Builder instance.
      * @var array
@@ -110,10 +111,12 @@ class QueryFilter
             if ($filterValue = $request->get($alias)) {
                 if ($filter === 'sort') {
                     $this->filters['sort'] = $this->extrudeSortFields($filterValue);
-                } else if (in_array($filter, array_keys($this->filters['paginator']))) {
-                    $this->filters['paginator'][$filter] = $filterValue;
                 } else {
-                    $this->filters[$filter] = $filterValue;
+                    if (in_array($filter, array_keys($this->filters['paginator']))) {
+                        $this->filters['paginator'][$filter] = $filterValue;
+                    } else {
+                        $this->filters[$filter] = $filterValue;
+                    }
                 }
             }
         }
@@ -136,11 +139,13 @@ class QueryFilter
                 'filter' => $filter,
                 'value' => $value,
             ];
-        } else if ($mode === 'before') {
-            $this->before[] = [
-                'filter' => $filter,
-                'value' => $value,
-            ];
+        } else {
+            if ($mode === 'before') {
+                $this->before[] = [
+                    'filter' => $filter,
+                    'value' => $value,
+                ];
+            }
         }
         return $this;
     }
@@ -158,8 +163,10 @@ class QueryFilter
 
         if ($mode == 'before') {
             $filters = $this->before;
-        } else if ($mode == 'after') {
-            $filters = $this->after;
+        } else {
+            if ($mode == 'after') {
+                $filters = $this->after;
+            }
         }
 
         if (count($filters) == 0) {
@@ -167,7 +174,6 @@ class QueryFilter
         }
 
         foreach ($filters as $toRun) {
-
             $filter = $toRun['filter'];
             $value = $toRun['value'];
 
@@ -211,7 +217,7 @@ class QueryFilter
         }
 
         foreach ($sorts as $sort) {
-            list($field, $value) = explode($this->defaults['separator'], $sort);
+            [$field, $value] = explode($this->defaults['separator'], $sort);
             $sortingFields[] = [
                 'name' => $field,
                 'direction' => $value,

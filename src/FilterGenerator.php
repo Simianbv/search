@@ -1,9 +1,11 @@
 <?php
+
 /**
- * Copyright (c) 2019.
+ * @copyright (c) Simian B.V. 2019
+ * @version       1.0.0
  */
 
-namespace App\Lightning;
+namespace Simianbv\Search;
 
 use Exception;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +14,7 @@ use Illuminate\Support\Str;
 
 /**
  * @class   FilterGenerator
- * @package App\Lightning
+ * @package Simianbv\Search
  */
 class FilterGenerator
 {
@@ -88,7 +90,7 @@ class FilterGenerator
 
         if (!$this->filters) {
             if ($this->enableCache) {
-                $this->filters = persistCache(
+                $this->filters = persist_cache(
                     $this->getCacheKey(), function () use ($generator) {
                     return $generator->build();
                 }, 60 * 24, ['filter']
