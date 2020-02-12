@@ -7,7 +7,6 @@ namespace App\Lightning;
 
 use Illuminate\Http\Request;
 
-
 /**
  * Class QueryFilter
  *
@@ -82,7 +81,7 @@ class QueryFilter
      *
      * @param Request $request
      */
-    public function apply($request = null)
+    public function apply(Request $request = null)
     {
         if ($request === null) {
             $request = request();

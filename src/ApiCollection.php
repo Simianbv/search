@@ -9,6 +9,7 @@ namespace App\Lightning;
 use App\Lightning\Contracts\SearchResultInterface;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
+
 /**
  * @class   ApiCollection
  * @package App\Http\Resources
@@ -28,7 +29,7 @@ class ApiCollection extends ResourceCollection
     /**
      * GroupCollection constructor.
      *
-     * @param SearchResult|Collection|mixed $result
+     * @param SearchResult|mixed $result
      * @param callable|null $formatter
      */
     public function __construct($result, $formatter = null)

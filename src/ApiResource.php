@@ -5,7 +5,7 @@
 
 namespace App\Lightning;
 
-use App\Lightning\Contracts\RelationGuard;
+use App\Lightning\Contracts\RelationGuardInterface;
 use App\Services\Acl\Acl;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,13 +43,13 @@ class ApiResource extends JsonResource
     /**
      * ApiResource constructor.
      *
-     * @todo: test if backwards compatible in full
-     *
      * @param string|Object|Builder|Model $identifier
      * @param string|Object|Builder|Model $target
      * @param array|null                  $messages
      *
      * @throws Exception
+     * @todo: test if backwards compatible in full
+     *
      */
     public function __construct($identifier, $target = null, $messages = null)
     {
@@ -86,14 +86,16 @@ class ApiResource extends JsonResource
         if (!$object) {
             if ($identifier instanceof Builder) {
                 $object = $identifier->first();
-            } else if (
-                is_string($identifier) && (is_string($target) || $target instanceof Builder || $target instanceof Model)) {
-                $object = $target::find($identifier);
             } else {
-                if ($originalModel) {
-                    $object = $originalModel;
+                if (
+                    is_string($identifier) && (is_string($target) || $target instanceof Builder || $target instanceof Model)) {
+                    $object = $target::find($identifier);
                 } else {
-                    throw new Exception('Unable to process the target model, have you made sure a target model has been provided?');
+                    if ($originalModel) {
+                        $object = $originalModel;
+                    } else {
+                        throw new Exception('Unable to process the target model, have you made sure a target model has been provided?');
+                    }
                 }
             }
         }
@@ -125,7 +127,7 @@ class ApiResource extends JsonResource
     public function getWithRelatedModel($identifier)
     {
         if ($withRequest = request()->input('with')) {
-            if ($this->builder->getModel() instanceof RelationGuard) {
+            if ($this->builder->getModel() instanceof RelationGuardInterface) {
                 $parts = array_map('trim', explode(',', $withRequest));
                 foreach ($parts as $with) {
                     $guardedRelations = $this->builder->getModel()::getGuardedRelations();
@@ -173,7 +175,7 @@ class ApiResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param \Illuminate\Http\Request $request
      *
      * @return array
      */
@@ -221,9 +223,11 @@ class ApiResource extends JsonResource
     {
         if (is_array($messages)) {
             $messages = new Collection($messages);
-        } else if (!$messages instanceof Collection) {
-            // raise an error somehow?
-            // @todo: solve messages array/collection issue?
+        } else {
+            if (!$messages instanceof Collection) {
+                // raise an error somehow?
+                // @todo: solve messages array/collection issue?
+            }
         }
 
         if ($messages instanceof Collection) {

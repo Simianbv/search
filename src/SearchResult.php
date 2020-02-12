@@ -6,7 +6,7 @@
 
 namespace App\Lightning;
 
-use App\Lightning\Contracts\RelationGuard;
+use App\Lightning\Contracts\RelationGuardInterface;
 use App\Lightning\Contracts\SearchResultInterface;
 use App\Lightning\Exceptions\SearchException;
 use App\Services\Acl\Acl;
@@ -64,8 +64,8 @@ class SearchResult implements SearchResultInterface
      * Extrude all the filterable fields from the GET request and start applying them
      *
      * @param Builder|Model|string $target
-     * @param array $meta
-     * @param Request|null $request
+     * @param array                $meta
+     * @param Request|null         $request
      *
      * @return SearchResult
      * @throws SearchException
@@ -93,7 +93,6 @@ class SearchResult implements SearchResultInterface
         }
 
         if (is_string($target)) {
-
             if (!class_exists($target)) {
                 throw new SearchException("Unable to determine that the class exists.");
             }
@@ -148,7 +147,7 @@ class SearchResult implements SearchResultInterface
     {
         $modelName = $this->getModelName(true);
         if ($withRequest = $this->request->get('with')) {
-            if (in_array(RelationGuard::class, class_implements($modelName))) {
+            if (in_array(RelationGuardInterface::class, class_implements($modelName))) {
                 $parts = array_map('trim', explode(',', $withRequest));
                 foreach ($parts as $with) {
                     $guardedRelations = $modelName::getGuardedRelations();
@@ -183,7 +182,6 @@ class SearchResult implements SearchResultInterface
      */
     public function with($filter, $value, $mode = 'after')
     {
-
         $this->has_evaluated = false;
         $this->queryFilter->extend($mode, $filter, $value);
         return $this;
@@ -199,7 +197,6 @@ class SearchResult implements SearchResultInterface
     protected function getModelName($namespace = false)
     {
         if ($this->builder) {
-
             if ($namespace) {
                 return get_class($this->builder->getModel());
             }
@@ -220,7 +217,6 @@ class SearchResult implements SearchResultInterface
         $namespace = $this->getModelName();
 
         foreach ($this->queryFilter->all() as $filterName => $value) {
-
             if ($value === null || empty($value)) {
                 continue;
             }
@@ -231,7 +227,6 @@ class SearchResult implements SearchResultInterface
             if (static::isValidDecorator($decorator)) {
                 $this->builder = $decorator::apply($this->builder, $value);
             } else {
-
                 // if a custom filter decorator needs to be created
                 $decorator = static::createCustomFilterDecorator($namespace, $filterName);
                 if (static::isValidDecorator($decorator)) {
@@ -294,7 +289,7 @@ class SearchResult implements SearchResultInterface
      * Magic __call override, which is used to map the static calling of methods to their dynamic counter parts.
      *
      * @param string $name
-     * @param mixed $arguments
+     * @param mixed  $arguments
      *
      * @return mixed|SearchResult
      */
@@ -308,7 +303,7 @@ class SearchResult implements SearchResultInterface
      * Magic __call override, which is used to map the static calling of methods to their dynamic counter parts.
      *
      * @param string $name
-     * @param mixed $arguments
+     * @param mixed  $arguments
      *
      * @return mixed|SearchResult
      */

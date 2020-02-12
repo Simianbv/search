@@ -64,10 +64,8 @@ class FilterGenerator
     public function __construct($model)
     {
         if ($model instanceof Model) {
-
             $this->model_class = get_class($model);
             $this->model = $model;
-
         } else {
             if (!class_exists($model)) {
                 throw new Exception("Model $model doesn't exist.");
@@ -90,9 +88,11 @@ class FilterGenerator
 
         if (!$this->filters) {
             if ($this->enableCache) {
-                $this->filters = persistCache($this->getCacheKey(), function () use ($generator) {
+                $this->filters = persistCache(
+                    $this->getCacheKey(), function () use ($generator) {
                     return $generator->build();
-                }, 60 * 24, ['filter']);
+                }, 60 * 24, ['filter']
+                );
             } else {
                 return $generator->build();
             }
@@ -125,18 +125,16 @@ class FilterGenerator
 
         $columns = $this->getTableColumns();
 
-        $prefixName = request()->get('as') ? request()->get('as') . '.' : '';
+        $relatedTableNamePrefix = request()->get('as') ? request()->get('as') . '.' : '';
 
         foreach ($columns as $name => $column) {
-
             if (is_array($column)) {
                 $filters[$name] = $column;
-                $filters[$name]['name'] = $prefixName . $name;
-
+                $filters[$name]['name'] = $relatedTableNamePrefix . $name;
             } else {
                 $filters[$name] = [
                     'relation' => false,
-                    'name' => $prefixName . $name,
+                    'name' => $relatedTableNamePrefix . $name,
                     'type' => self::getValidFilterType($column, 'string'),
                 ];
             }
@@ -144,7 +142,6 @@ class FilterGenerator
             if (!isset($filters[$name]['label'])) {
                 $filters[$name]['label'] = __(ucfirst(implode(' ', explode('_', $name))));
             }
-
         }
 
         $filters = array_merge($filters, $this->createRelationOptions($relationColumns));
@@ -166,7 +163,6 @@ class FilterGenerator
         $relations = [];
 
         foreach ($relationColumns as $relationName => $relationColumn) {
-
             $label = $relationColumn['label'] ?? __($relationName);
 
             // if the column should be a normal searchable column, instead of a relation
@@ -211,9 +207,9 @@ class FilterGenerator
                 // actually perform the search query and retrieve the options
                 $builder = $class::select($relationColumn['select']);
 
-                if(isset($relationColumn['order-by'])){
+                if (isset($relationColumn['order-by'])) {
                     $direction = 'asc';
-                    if(is_array($relationColumn['order-by'])){
+                    if (is_array($relationColumn['order-by'])) {
                         $field = $relationColumn['order-by'][0];
                         $direction = $relationColumn['order-by'][1];
                     } else {
@@ -277,7 +273,6 @@ class FilterGenerator
         if (isset($this->model->filters) &&
             isset($this->model->filters['relations']) &&
             is_array($this->model->filters['relations'])) {
-
             foreach ($this->model->filters['relations'] as $name => $relation) {
                 if (
                     isset($relation['model']) && isset($relation['select'])) {
@@ -304,9 +299,11 @@ class FilterGenerator
         $builder = $this->model->getConnection()->getSchemaBuilder();
         $columns = $builder->getColumnListing($this->model->getTable());
 
-        $columnsWithType = collect($columns)->mapWithKeys(function ($item, $key) use ($builder) {
-            return [$item => $builder->getColumnType($this->model->getTable(), $item)];
-        });
+        $columnsWithType = collect($columns)->mapWithKeys(
+            function ($item, $key) use ($builder) {
+                return [$item => $builder->getColumnType($this->model->getTable(), $item)];
+            }
+        );
         $columns = $columnsWithType->toArray();
 
         // this should clean up relations by unsetting the *_id fields
