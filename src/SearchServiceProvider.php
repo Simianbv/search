@@ -30,8 +30,6 @@ class SearchServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->loadRoutesFrom(__DIR__ . '/api.php');
-
         $this->publishes(
             [
                 __DIR__ . '/search-api.php' => config_path('search-api.php'),
