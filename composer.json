@@ -1,0 +1,40 @@
+{
+  "name": "simianbv/json-schema",
+  "description": "A utility package for creating JSON resources based on the laravel models provided, comes with a model generator and migration",
+  "type": "project",
+  "keywords": [
+    "laravel",
+    "json-schema"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Simian",
+      "email": "it@simian.nl"
+    }
+  ],
+  "require": {
+    "php": ">=7.3",
+    "laravel/framework": "6.*",
+    "symfony/yaml": "^5.0|^4.2",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Simianbv\\JsonSchema\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Simianbv\\JsonSchema\\JsonSchemaServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "beta"
+}
+
+
+
+
+
