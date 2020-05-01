@@ -17,6 +17,18 @@ use Illuminate\Http\Request;
 class QueryFilter
 {
     /**
+     * Add some common aliases to the commonly used filters
+     * @var array
+     */
+    protected $alias_filters = [
+        'wildcard' => ['q', 'query'],
+        'search' => ['search', 'filter'],
+        'per_page' => ['per_page', 'limit'],
+        'page' => ['page', 'current'],
+        'sort' => ['sort', 'dir'],
+    ];
+    
+    /**
      * Stores all the defaults we want to use in building up our Query in the Builder instance.
      * @var array
      */
@@ -44,18 +56,6 @@ class QueryFilter
             'per_page' => null,
             'page' => null,
         ],
-    ];
-
-    /**
-     * Add some common aliases to the commonly used filters
-     * @var array
-     */
-    protected $alias_filters = [
-        'wildcard' => ['q', 'query'],
-        'search' => ['search', 'filter'],
-        'per_page' => ['per_page', 'limit'],
-        'page' => ['page', 'current'],
-        'sort' => ['sort', 'dir'],
     ];
 
     /**

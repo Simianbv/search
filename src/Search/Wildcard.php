@@ -49,6 +49,7 @@ class Wildcard implements FilterInterface
      */
     public static function apply(Builder $builder, $value): Builder
     {
+        Log::debug("checker de check: " . $value);
         if ($builder->getModel() instanceof IsApiSearchable) {
             $searchableColumns = $builder->getModel()->getSearchableColumns();
 
