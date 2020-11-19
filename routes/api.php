@@ -8,7 +8,7 @@ $prefix = $prefix == '/' || $prefix == '//' || $prefix == '' ? '' : '/' . $prefi
 
 Route::group(['middleware' => ['api', 'introspect']], function () use ($prefix) {
 
-    Route::get($prefix . 'filters/{model}', 'Simianbv\Search\Http\FilterController@getFiltersByModel');
+    Route::get($prefix . 'filters/{model?}', 'Simianbv\Search\Http\FilterController@getFiltersByModel');
 
 });
 
