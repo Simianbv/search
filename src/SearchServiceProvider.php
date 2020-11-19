@@ -32,7 +32,7 @@ class SearchServiceProvider extends ServiceProvider
     {
         $this->publishes(
             [
-                __DIR__ . '/search-api.php' => config_path('search-api.php'),
+                __DIR__ . '/../config/search.php' => config_path('search.php'),
             ], "search-api"
         );
     }

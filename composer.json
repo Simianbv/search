@@ -16,6 +16,7 @@
   "require": {
     "php": ">=7.3",
     "laravel/framework": "6.*|7.*",
+    "simianbv/introspect": "1.*|2.*",
     "ext-json": "*"
   },
   "autoload": {
