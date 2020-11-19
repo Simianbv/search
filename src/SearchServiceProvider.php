@@ -21,6 +21,7 @@ class SearchServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
     }
 
     /**
