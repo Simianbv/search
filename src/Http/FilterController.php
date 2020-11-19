@@ -6,6 +6,7 @@
 namespace Simianbv\Search\Http;
 
 use Simianbv\Search\FilterGenerator;
+use Illuminate\Routing\Controller;
 use Exception;
 
 /**
