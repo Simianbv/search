@@ -15,7 +15,6 @@
   ],
   "require": {
     "php": ">=7.3|^8.0",
-    "laravel/framework": "6.*|7.*",
     "simianbv/introspect": "1.*|2.*",
     "ext-json": "*"
   },
