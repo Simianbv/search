@@ -15,7 +15,7 @@
   ],
   "require": {
     "php": ">=7.3|^8.0",
-    "simianbv/introspect": "1.*|2.*",
+    "simianbv/introspect": "2.*",
     "ext-json": "*"
   },
   "autoload": {
