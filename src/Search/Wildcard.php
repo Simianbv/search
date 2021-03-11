@@ -12,12 +12,9 @@ use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Simianbv\Search\Contracts\FilterInterface;
 use Simianbv\Search\Contracts\IsApiSearchable;
-use Simianbv\Search\Search\Types\ExternalColumn;
 use Simianbv\Search\Search\Types\JoinableColumn;
-use Simianbv\Search\Search\Types\SearchableColumn;
 use Simianbv\Search\SearchResult;
 
 /**
@@ -80,11 +77,6 @@ class Wildcard extends BaseSearch implements FilterInterface
                         continue;
                     }
 
-                    if ($field instanceof ExternalColumn) {
-                        $this->addExternalColumn($field, $query, $builder);
-                        continue;
-                    }
-
                     // if the searchable field is an array, it means we want a concatenated field
                     if (is_array($field)) {
                         $this->addConcatenatedFields($query, $field, $baseTable, $value, $scopes);
@@ -115,33 +107,6 @@ class Wildcard extends BaseSearch implements FilterInterface
         $builder->select($scopes);
 
         return $builder;
-    }
-
-
-    /**
-     * @param ExternalColumn $column
-     * @param $query
-     * @param $builder
-     * @param $value
-     */
-    protected function addExternalColumn (ExternalColumn $column, $query, $builder, $value): void
-    {
-        $model = $column->getRelatedModel();
-        $class = new $model;
-        if (!$class instanceof Model) {
-            throw new Exception("No valid model was given in the ExternalColumn, make sure a valid model is given");
-        }
-
-        /** @var Builder $externalBuilder */
-        $externalBuilder = (new $model)->newQuery();
-
-        foreach($column->getSearchableColumns() as $searchableColumn){
-            $externalBuilder->where($searchableColumn, $this->getSearchValue());
-        }
-
-        $results = $externalBuilder->get();
-
-        Log::debug($results->toArray());
     }
 
     /**

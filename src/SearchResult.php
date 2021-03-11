@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Simianbv\Search\Contracts\RelationGuardInterface;
 use Simianbv\Search\Contracts\SearchResultInterface;

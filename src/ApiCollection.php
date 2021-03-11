@@ -8,7 +8,6 @@
 namespace Simianbv\Search;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Support\Facades\Log;
 use Simianbv\Search\Contracts\SearchResultInterface;
 
 
