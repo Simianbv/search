@@ -26,7 +26,7 @@ class Paginator implements FilterInterface
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      * @internal implement the fields you want to query on in the method itself.
      */
-    public static function apply(Builder $builder, $paging)
+    public function apply(Builder $builder, $paging)
     {
         return $builder->paginate($paging['per_page']);
     }

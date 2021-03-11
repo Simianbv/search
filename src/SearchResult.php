@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Simianbv\Search\Contracts\RelationGuardInterface;
 use Simianbv\Search\Contracts\SearchResultInterface;
@@ -229,7 +231,9 @@ class SearchResult implements SearchResultInterface
 
             // if immediately a valid class, apply the filter directly
             if (static::isValidDecorator($decorator)) {
-                $this->builder = $decorator::apply($this->builder, $value);
+                $decoratorFilter = new $decorator($this);
+                
+                $this->builder = $decoratorFilter->apply($this->builder, $value);
             } else {
                 // if a custom filter decorator needs to be created
                 $decorator = static::createCustomFilterDecorator($namespace, $filterName);
@@ -251,7 +255,7 @@ class SearchResult implements SearchResultInterface
     }
 
     /**
-     * @return Builder
+     * @return Builder|LengthAwarePaginator
      */
     public function getBuilder()
     {

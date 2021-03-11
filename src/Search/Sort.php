@@ -27,7 +27,7 @@ class Sort implements FilterInterface
      *
      * @return Builder
      */
-    public static function apply(Builder $builder, $sorts): Builder
+    public function apply(Builder $builder, $sorts): Builder
     {
         $table = $builder->getModel()->getTable() . '.';
 

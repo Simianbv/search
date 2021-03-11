@@ -88,7 +88,7 @@ class Search implements FilterInterface
      * @internal implement the fields you want to query on in the method itself.
      *
      */
-    public static function apply(Builder $builder, $value)
+    public function apply(Builder $builder, $value)
     {
         $sets = [];
         $filters = [];

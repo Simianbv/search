@@ -10,18 +10,22 @@ namespace Simianbv\Search\Search;
 use Exception;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Simianbv\Search\Contracts\FilterInterface;
 use Simianbv\Search\Contracts\IsApiSearchable;
+use Simianbv\Search\Search\Types\ExternalColumn;
+use Simianbv\Search\Search\Types\JoinableColumn;
+use Simianbv\Search\Search\Types\SearchableColumn;
+use Simianbv\Search\SearchResult;
 
 /**
  * @class   Wildcard
  * @package Simianbv\Search\Search
  */
-class Wildcard implements FilterInterface
+class Wildcard extends BaseSearch implements FilterInterface
 {
-
     /**
      * @var string
      */
@@ -38,6 +42,11 @@ class Wildcard implements FilterInterface
     protected static $wildcardPrefix = 'wildcard.';
 
     /**
+     * @var array
+     */
+    protected $scopes = [];
+
+    /**
      * Apply the filter on the Builder object provided and add the value to match onto the query.
      *
      * @param Builder $builder
@@ -47,74 +56,186 @@ class Wildcard implements FilterInterface
      * @internal implement the fields you want to query on in the method itself.
      *
      */
-    public static function apply(Builder $builder, $value): Builder
+    public function apply (Builder $builder, $value): Builder
     {
-        Log::debug("checker de check: " . $value);
-        if ($builder->getModel() instanceof IsApiSearchable) {
-            $searchableColumns = $builder->getModel()->getSearchableColumns();
+        $this->setSearchValue($value);
 
-            $wildcardFields = request()->input('fields')
-                ? explode(self::$fieldSeparator, request()->input('fields'))
-                : $searchableColumns;
-
-            if (is_array($builder->getQuery()->columns)) {
-                $selectScopes = array_unique(array_merge($builder->getQuery()->columns, [$builder->getModel()->getTable() . '.*']));
-            } else {
-                $selectScopes = [$builder->getModel()->getTable() . '.*'];
-            }
-
-            $builder->where(
-                function ($query) use ($wildcardFields, $searchableColumns, $builder, $value) {
-                    $baseTable = $builder->getModel()->getTable();
-
-                    foreach ($wildcardFields as $field) {
-                        // if the searchable field is an array, it means we want a concatenated field
-                        if (is_array($field)) {
-                            self::addConcatenatedFields($query, $field, $baseTable, $value, $selectScopes);
-                            continue;
-                        }
-
-                        // else if the field given is not one of the valid fields we're allowed to search in, skip it
-                        if (!in_array($field, $searchableColumns)) {
-                            continue;
-                        }
-
-                        // if the field contains a dot, we probably want to join a related table to match results
-                        if (strpos($field, '.') !== false) {
-                            [$table, $columns] = self::getJoinColumns($builder, $field);
-                            foreach ($columns as $column) {
-                                $selectScopes[] = $table . '.' . $column;
-                                $query->orWhere($table . '.' . $column, 'like', '%' . $value . '%');
-                            }
-                            continue;
-                        }
-
-                        // if no joinable columns were set, just use a 'regular and plain' where clause
-                        $query->orWhere($baseTable . '.' . $field, 'like', "%" . $value . "%");
-                    }
-                }
-            );
-
-            $builder->select($selectScopes);
+        // If the model is not searchable, just return the default builder instance
+        if (!$builder->getModel() instanceof IsApiSearchable) {
+            return $builder;
         }
 
+        // first, get the searchable columns and the optional fields the query wants to search in
+        [$searchableColumns, $wildcardColumns] = $this->getSearchableColumns($builder);
+        $scopes = $this->getSelectScopes($builder);
+
+        $builder->where(
+
+            function ($query) use ($wildcardColumns, $searchableColumns, $builder, $value) {
+                $baseTable = $builder->getModel()->getTable();
+
+                foreach ($wildcardColumns as $field) {
+                    if ($field instanceof JoinableColumn) {
+                        $this->addJoinableColumn($field, $query, $builder);
+                        continue;
+                    }
+
+                    if ($field instanceof ExternalColumn) {
+                        $this->addExternalColumn($field, $query, $builder);
+                        continue;
+                    }
+
+                    // if the searchable field is an array, it means we want a concatenated field
+                    if (is_array($field)) {
+                        $this->addConcatenatedFields($query, $field, $baseTable, $value, $scopes);
+                        continue;
+                    }
+
+                    // else if the field given is not one of the valid fields we're allowed to search in, skip it
+                    if (!in_array($field, $searchableColumns)) {
+                        continue;
+                    }
+
+                    // if the field contains a dot, we probably want to join a related table to match results
+                    if (strpos($field, '.') !== false) {
+                        [$table, $columns] = $this->getJoinColumns($builder, $field);
+                        foreach ($columns as $column) {
+                            $scopes[] = $table . '.' . $column;
+                            $query->orWhere($table . '.' . $column, 'like', '%' . $value . '%');
+                        }
+                        continue;
+                    }
+
+                    // if no joinable columns were set, just use a 'regular and plain' where clause
+                    $query->orWhere($baseTable . '.' . $field, 'like', "%" . $value . "%");
+                }
+            }
+        );
+
+        $builder->select($scopes);
+
         return $builder;
+    }
+
+
+    /**
+     * @param ExternalColumn $column
+     * @param $query
+     * @param $builder
+     * @param $value
+     */
+    protected function addExternalColumn (ExternalColumn $column, $query, $builder, $value): void
+    {
+        $model = $column->getRelatedModel();
+        $class = new $model;
+        if (!$class instanceof Model) {
+            throw new Exception("No valid model was given in the ExternalColumn, make sure a valid model is given");
+        }
+
+        /** @var Builder $externalBuilder */
+        $externalBuilder = (new $model)->newQuery();
+
+        foreach($column->getSearchableColumns() as $searchableColumn){
+            $externalBuilder->where($searchableColumn, $this->getSearchValue());
+        }
+
+        $results = $externalBuilder->get();
+
+        Log::debug($results->toArray());
+    }
+
+    /**
+     * Add a Joinable column to the result set to be included in the search space.
+     *
+     * @param JoinableColumn $field
+     * @param $query
+     * @param Builder $builder
+     * @param mixed $value
+     * @param $scopes
+     * @return void
+     */
+    protected function addJoinableColumn (JoinableColumn $column, $query, $builder, $value): void
+    {
+        $tableColumns = $this->getTableColumns($builder);
+
+        $as = $column->getColumn();
+
+        $concatenated = [];
+
+        $builder->{$column->getJoinType()}(
+            $column->getJoinTable(),
+            $column->getJoinTable() . '.' . $column->getCondition()->getBaseField(),
+            $column->getCondition()->getCondition(),
+            $builder->getModel()->getTable() . '.' . $column->getCondition()->getOtherField(),
+        );
+
+        $len = count($column->getFields()) - 1;
+        foreach ($column->getFields() as $i => $field) {
+            $concatenated[] = $column->getJoinTable() . '.' . $field;
+            if ($i < $len) {
+                $concatenated[] = ' ';
+            }
+        }
+        if (count($concatenated) > 1) {
+            $this->scopes[] = 'CONCAT(' . implode(',', $concatenated) . ') AS ' . $column->getColumn();
+        } else {
+            $this->scopes[] = $concatenated[0] . ' AS ' . $column->getColumn();
+        }
+
+        foreach ($concatenated as $set) {
+            $builder->orWhere($set, 'LIKE', "%" . $this->getSearchValue() . "%");
+        }
+    }
+
+    /**
+     * Return the searchable columns based on the model and the second will be the fields to search for
+     *
+     * @param Builder $builder
+     * @return array
+     */
+    protected function getSearchableColumns (Builder $builder): array
+    {
+        // first, get the searchable columns for this model
+        $wildcardColumns = $searchableColumns = $builder->getModel()->getSearchableColumns();
+
+        // if the optional fields parameter was given in the request, add them to the wildcard columns array
+        if (request()->input('fields')) {
+            $wildcardColumns = explode(static::$fieldSeparator, request()->input('fields'));
+        }
+
+        return [$searchableColumns, $wildcardColumns];
+    }
+
+    /**
+     * Return an array for all the `select` scopes you want added to the query builder ( and the query )
+     *
+     * @param Builder $builder
+     * @return array|string[]
+     */
+    protected function getSelectScopes (Builder $builder)
+    {
+        // start with the base table and then all columns
+        $this->scopes = [$builder->getModel()->getTable() . '.*'];
+
+        // if there's specific columns, merge those with the origin
+        if (is_array($builder->getQuery()->columns)) {
+            $this->scopes = array_unique(array_merge($builder->getQuery()->columns, $scopes));
+        }
+        return $this->scopes;
     }
 
     /**
      * Add a concatenated field to the query
      *
-     *
-     *
      * @param Builder $builder
-     * @param array   $fields
-     * @param string  $baseTable
-     * @param string  $value
-     * @param array   $selectScopes
+     * @param array $fields
+     * @param string $baseTable
+     * @param string $value
+     * @param array $selectScopes
      */
-    protected static function addConcatenatedFields(Builder $builder, array $fields, string $baseTable, string $value, &$selectScopes)
+    protected function addConcatenatedFields (Builder $builder, array $fields, string $baseTable, string $value, &$selectScopes)
     {
-        $tableColumns = self::getTableColumns($builder);
+        $tableColumns = $this->getTableColumns($builder);
 
         $as = 'concat_result';
         if (!in_array(end($fields), $tableColumns)) {
@@ -127,7 +248,7 @@ class Wildcard implements FilterInterface
             if (in_array($field, $tableColumns)) {
                 $table = $baseTable;
                 if (strpos($field, '.') !== false) {
-                    [$table, $columns] = self::getJoinColumns($builder, $field);
+                    [$table, $columns] = $this->getJoinColumns($builder, $field);
                 }
 
                 $targetFields[] = $table . '.' . $field;
@@ -136,7 +257,6 @@ class Wildcard implements FilterInterface
             }
         }
         $concat = 'CONCAT(' . implode(',', $targetFields) . ')';
-        $selectScopes[] = $concat . ' as ' . $as;
 
         $builder->orWhere(DB::raw($concat), 'like', "%" . $value . '%');
     }
@@ -147,11 +267,11 @@ class Wildcard implements FilterInterface
      * Get the joined Table and associated columns to append to the query.
      *
      * @param Builder $builder
-     * @param string  $field
+     * @param string $field
      *
      * @return array
      */
-    protected static function getJoinColumns(Builder $builder, string $field)
+    protected function getJoinColumns (Builder $builder, string $field)
     {
         // get the relation ( the joinable table ) and the column on that table
         [$relation, $joinIdentifier] = explode('.', $field);
@@ -178,7 +298,7 @@ class Wildcard implements FilterInterface
             $builder->getModel()->getTable() . '.' . $localKey
         );
 
-        return [$table, $columns,];
+        return [$table, $columns];
     }
 
     /**
@@ -190,11 +310,11 @@ class Wildcard implements FilterInterface
      *
      * @return array|Repository
      */
-    protected static function getTableColumns(Builder $builder)
+    protected function getTableColumns (Builder $builder)
     {
         try {
             return persist_cache(
-                self::$wildcardPrefix . $builder->getModel()->getTable(), function () use ($builder) {
+                static::$wildcardPrefix . $builder->getModel()->getTable(), function () use ($builder) {
                 return $builder->getModel()->getConnection()->getSchemaBuilder()->getColumnListing($builder->getModel()->getTable());
             }, 60 * 60 * 24 * 7
             );
@@ -202,5 +322,6 @@ class Wildcard implements FilterInterface
             return $builder->getModel()->getConnection()->getSchemaBuilder()->getColumnListing($builder->getModel()->getTable());
         }
     }
+
 }
 
