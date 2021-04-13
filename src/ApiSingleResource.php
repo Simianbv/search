@@ -16,10 +16,10 @@ use Illuminate\Support\Collection;
 use Simianbv\Search\Contracts\RelationGuardInterface;
 
 /**
- * @class   ApiResource
+ * @class   ApiSingleResource
  * @package App\Http\Resources
  */
-class ApiResource extends JsonResource
+class ApiSingleResource extends JsonResource
 {
     /**
      * @var Collection
@@ -42,7 +42,7 @@ class ApiResource extends JsonResource
     private $_base_object = null;
 
     /**
-     * ApiResource constructor.
+     * ApiSingleResource constructor.
      *
      * @param string|Object|Builder|Model $identifier
      * @param string|Object|Builder|Model $target
@@ -210,7 +210,7 @@ class ApiResource extends JsonResource
      *
      * @param $data
      *
-     * @return ApiResource
+     * @return ApiSingleResource
      */
     public function append($data)
     {
