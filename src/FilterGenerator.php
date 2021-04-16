@@ -119,7 +119,7 @@ class FilterGenerator
      * @return array $filters
      * @throws Exception
      */
-    public function build()
+    public function build ()
     {
         $filters = [];
 
@@ -136,17 +136,20 @@ class FilterGenerator
             } else {
                 $filters[$name] = [
                     'relation' => false,
-                    'name' => $relatedTableNamePrefix . $name,
-                    'type' => self::getValidFilterType($column, 'string'),
+                    'name'     => $relatedTableNamePrefix . $name,
+                    'type'     => self::getValidFilterType($column, 'string'),
                 ];
             }
 
             if (!isset($filters[$name]['label'])) {
-                $filters[$name]['label'] = __(ucfirst(implode(' ', explode('_', $name))));
+                $filters[$name]['label'] = __('filters.' . $name) !== 'filters.' . $name
+                    ? __('filters.' . $name)
+                    : ucfirst(implode(' ', explode('_', $name)));
             }
         }
 
         $filters = array_merge($filters, $this->createRelationOptions($relationColumns));
+
         $this->filters = $filters;
 
         return $this->filters;
