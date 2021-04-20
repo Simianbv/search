@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @class   FilterGenerator
@@ -303,6 +304,9 @@ class FilterGenerator
 
         $builder = $this->model->getConnection()->getSchemaBuilder();
         $columns = $builder->getColumnListing($this->model->getTable());
+
+
+        DB::getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
         $columnsWithType = collect($columns)->mapWithKeys(
             function ($item, $key) use ($builder) {
