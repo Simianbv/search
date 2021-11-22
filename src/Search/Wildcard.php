@@ -73,13 +73,13 @@ class Wildcard extends BaseSearch implements FilterInterface
 
                 foreach ($wildcardColumns as $field) {
                     if ($field instanceof JoinableColumn) {
-                        $this->addJoinableColumn($field, $query, $builder);
+                        $this->addJoinableColumn($field, $builder);
                         continue;
                     }
 
                     // if the searchable field is an array, it means we want a concatenated field
                     if (is_array($field)) {
-                        $this->addConcatenatedFields($query, $field, $baseTable, $value, $scopes);
+                        $this->addConcatenatedFields($query, $field, $baseTable, $value);
                         continue;
                     }
 
@@ -113,18 +113,11 @@ class Wildcard extends BaseSearch implements FilterInterface
      * Add a Joinable column to the result set to be included in the search space.
      *
      * @param JoinableColumn $field
-     * @param $query
      * @param Builder $builder
-     * @param mixed $value
-     * @param $scopes
      * @return void
      */
-    protected function addJoinableColumn (JoinableColumn $column, $query, $builder, $value): void
+    protected function addJoinableColumn (JoinableColumn $column, $builder): void
     {
-        $tableColumns = $this->getTableColumns($builder);
-
-        $as = $column->getColumn();
-
         $concatenated = [];
 
         $builder->{$column->getJoinType()}(
@@ -163,7 +156,7 @@ class Wildcard extends BaseSearch implements FilterInterface
         // first, get the searchable columns for this model
         $wildcardColumns = $searchableColumns = $builder->getModel()->getSearchableColumns();
 
-        // if the optional fields parameter was given in the request, add them to the wildcard columns array
+        // if the optional fields parameter was g$scopeziven in the request, add them to the wildcard columns array
         if (request()->input('fields')) {
             $wildcardColumns = explode(static::$fieldSeparator, request()->input('fields'));
         }
@@ -184,7 +177,7 @@ class Wildcard extends BaseSearch implements FilterInterface
 
         // if there's specific columns, merge those with the origin
         if (is_array($builder->getQuery()->columns)) {
-            $this->scopes = array_unique(array_merge($builder->getQuery()->columns, $scopes));
+            $this->scopes = array_unique(array_merge($builder->getQuery()->columns, $this->scopes));
         }
         return $this->scopes;
     }
@@ -196,9 +189,8 @@ class Wildcard extends BaseSearch implements FilterInterface
      * @param array $fields
      * @param string $baseTable
      * @param string $value
-     * @param array $selectScopes
      */
-    protected function addConcatenatedFields (Builder $builder, array $fields, string $baseTable, string $value, &$selectScopes)
+    protected function addConcatenatedFields (Builder $builder, array $fields, string $baseTable, string $value)
     {
         $tableColumns = $this->getTableColumns($builder);
 
@@ -281,7 +273,7 @@ class Wildcard extends BaseSearch implements FilterInterface
             return persist_cache(
                 static::$wildcardPrefix . $builder->getModel()->getTable(), function () use ($builder) {
                 return $builder->getModel()->getConnection()->getSchemaBuilder()->getColumnListing($builder->getModel()->getTable());
-            }, 60 * 60 * 24 * 7
+            },  60 * 60 * 24 * 7
             );
         } catch (Exception $e) {
             return $builder->getModel()->getConnection()->getSchemaBuilder()->getColumnListing($builder->getModel()->getTable());
