@@ -5,6 +5,7 @@
 
 namespace Simianbv\Search\Http;
 
+use Illuminate\Support\Facades\App;
 use Simianbv\Search\FilterGenerator;
 use Illuminate\Routing\Controller;
 use Exception;
@@ -17,7 +18,22 @@ use Exception;
 class FilterController extends Controller
 {
 
-    protected $exclude_from_acl_validation = true;
+    /**
+     * @var bool
+     */
+    protected bool $exclude_from_acl_validation = true;
+
+    /**
+     * A helper to set up the browsers language, instead of it being forced upon by some
+     */
+    public function __construct ()
+    {
+        $request = request();
+        $language = $request->header('Accept-Language');
+        $parts = explode(';', $language);
+        $languageCode = explode(',', array_shift($parts));
+        App::setLocale(array_shift($languageCode));
+    }
 
     /**
      * Returns the Filter builder generator and returns an array containing all the filters applicable to the model

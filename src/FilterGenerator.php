@@ -10,6 +10,7 @@ namespace Simianbv\Search;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Builder;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -22,38 +23,38 @@ class FilterGenerator
     /**
      * @var array
      */
-    private $filters = [];
+    private mixed $filters = [];
 
     /**
      * The string representation of the model used.
      *
      * @var string
      */
-    protected $model_class = null;
+    protected mixed $model_class = null;
 
     /**
      * @var bool
      */
-    protected $enableCache = false;
+    protected bool $enableCache = false;
 
     /**
      * The model used for generating the filters on.
      *
      * @var Model
      */
-    protected $model = null;
+    protected mixed $model = null;
 
     /**
      * Valid filter types to render inc. aliases
      * @var array
      */
     public static $validTypes = [
-        'select' => ['multiselect', 'combobox'],
-        'string' => ['text', 'email'],
-        'number' => ['int', 'integer', 'double', 'bigInt', 'float', 'smallint', 'mediumInt'],
+        'select'   => ['multiselect', 'combobox'],
+        'string'   => ['text', 'email'],
+        'number'   => ['int', 'integer', 'double', 'bigInt', 'float', 'smallint', 'mediumInt'],
         'datetime' => ['datetime', 'timestamp'],
-        'date' => ['date'],
-        'bool' => ['boolean'],
+        'date'     => ['date'],
+        'bool'     => ['boolean'],
     ];
 
 
@@ -64,7 +65,7 @@ class FilterGenerator
      *
      * @throws Exception
      */
-    public function __construct($model)
+    public function __construct ($model)
     {
         if ($model instanceof Model) {
             $this->model_class = get_class($model);
@@ -85,7 +86,7 @@ class FilterGenerator
      * @return array
      * @throws Exception
      */
-    public function getFilters()
+    public function getFilters ()
     {
         $generator = $this;
 
@@ -94,8 +95,7 @@ class FilterGenerator
                 $this->filters = persist_cache(
                     $this->getCacheKey(), function () use ($generator) {
                     return $generator->build();
-                }, 60 * 24, ['filter']
-                );
+                },  60 * 24, ['filter']);
             } else {
                 return $generator->build();
             }
@@ -109,7 +109,7 @@ class FilterGenerator
      *
      * @return string
      */
-    private function getCacheKey()
+    private function getCacheKey ()
     {
         return md5('filters.search.' . Str::slug($this->model_class));
     }
@@ -123,11 +123,8 @@ class FilterGenerator
     public function build ()
     {
         $filters = [];
-
         $relationColumns = $this->getRelations();
-
         $columns = $this->getTableColumns();
-
         $relatedTableNamePrefix = request()->get('as') ? request()->get('as') . '.' : '';
 
         foreach ($columns as $name => $column) {
@@ -164,7 +161,7 @@ class FilterGenerator
      * @return array
      * @throws Exception
      */
-    private function createRelationOptions(array $relationColumns)
+    private function createRelationOptions (array $relationColumns)
     {
         $relations = [];
 
@@ -182,10 +179,10 @@ class FilterGenerator
             }
 
             $relations[$relationName] = [
-                'type' => self::getValidFilterType($type),
-                'name' => $relationName,
+                'type'     => self::getValidFilterType($type),
+                'name'     => $relationName,
                 'relation' => true,
-                'label' => $label,
+                'label'    => $label,
             ];
 
             if (!$searchable) {
@@ -238,7 +235,7 @@ class FilterGenerator
                 $relationOptions = $builder->get();
                 foreach ($relationOptions as $option) {
                     $relations[$relationName]['options'][] = [
-                        'id' => $option->{$option->getKeyName()},
+                        'id'    => $option->{$option->getKeyName()},
                         'label' => $this->getRelationSelectAsText($option, $originalSelect),
                     ];
                 }
@@ -254,7 +251,7 @@ class FilterGenerator
      *
      * @return string
      */
-    private function getRelationSelectAsText($option, $select = ['select'])
+    private function getRelationSelectAsText ($option, $select = ['select'])
     {
         $value = [];
         foreach ($select as $field) {
@@ -270,7 +267,7 @@ class FilterGenerator
      * @return array
      * @throws Exception
      */
-    public function getRelations()
+    public function getRelations ()
     {
         $relations = [];
         if (!$this->model) {
@@ -298,7 +295,7 @@ class FilterGenerator
      *
      * @return array
      */
-    public function getTableColumns()
+    public function getTableColumns ()
     {
         /** @var Builder $builder */
 
@@ -340,7 +337,7 @@ class FilterGenerator
      *
      * @return int|string
      */
-    public static function getValidFilterType($type, $default = 'select')
+    public static function getValidFilterType ($type, $default = 'select')
     {
         if (in_array($type, array_keys(self::$validTypes))) {
             return $type;
