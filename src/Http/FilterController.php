@@ -6,6 +6,7 @@
 namespace Simianbv\Search\Http;
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 use Simianbv\Search\FilterGenerator;
 use Illuminate\Routing\Controller;
 use Exception;
@@ -53,8 +54,16 @@ class FilterController extends Controller
             }
 
             $model = '\\App\\Models\\' . ucfirst($model);
+            $filterCacheKey = 'filter:'.strtolower(str_replace('\\', '.',$model));
+            if($response = Cache::get($filterCacheKey)){
+                return $response;
+            }
+
             $generator = new FilterGenerator($model);
-            return ['filters' => $generator->getFilters()];
+            $response = ['filters' => $generator->getFilters()];
+            Cache::put($filterCacheKey, $response, 60*60*2);
+            return $response;
+
         } catch (Exception $e) {
             return response(['message' => 'Unable to process model for filter generation', 'exception' => $e->getMessage()], 409);
         }
