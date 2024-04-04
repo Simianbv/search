@@ -4,6 +4,7 @@
  * @copyright (c) Simian B.V. 2019
  * @version       1.0.0
  */
+
 namespace Simianbv\Search\Search;
 
 use Simianbv\Search\Contracts\FilterInterface;
@@ -67,9 +68,9 @@ class Search implements FilterInterface
 
     protected static $types = [
         'string' => ['string', 'text', 'varchar', 'char'],
-        'bool' => ['bool', 'boolean'],
+        'bool'   => ['bool', 'boolean'],
         'number' => ['number', 'int', 'float', 'integer', 'double', 'bigInteger', 'smallInteger', 'mediumInteger'],
-        'date' => ['date', 'datetime', 'timestamp'],
+        'date'   => ['date', 'datetime', 'timestamp'],
     ];
 
     /**
@@ -88,7 +89,7 @@ class Search implements FilterInterface
      * @internal implement the fields you want to query on in the method itself.
      *
      */
-    public function apply(Builder $builder, $value)
+    public function apply (Builder $builder, $value)
     {
         $sets = [];
         $filters = [];
@@ -136,13 +137,37 @@ class Search implements FilterInterface
                     $relation = $builder->getModel()->filters['relations'][$filter['name']];
 
                     if ($originalColumn && $table && $table !== $baseTable) {
-                        $selectScopes[] = $baseTable . '.*';
-                        foreach ($relation['on'] as $first => $second) {
-                            $builder->join($table, $baseTable . '.' . $first, '=', $table . '.' . $second);
+                        if (self::isDeepRelationSearch($relation)) {
+
+                            $deep = (new $relation['target_model'])->newQuery();
+
+                            foreach ($relation['target_model_columns'] as $column) {
+                                $deep->where($column, 'LIKE', '%' . $query . '%');
+                            }
+                            $ids = $deep->limit($relation['target_model_limit'] ?? 20)
+                                ->get()
+                                ->pluck($relation['target_model_pk'] ?? 'id')
+                                ->toArray();
+
+                            $selectScopes[] = $baseTable . '.*';
+                            foreach ($relation['on'] as $first => $second) {
+                                $builder->join($table, $baseTable . '.' . $first, '=', $table . '.' . $second);
+                            }
+                            $selectScopes[] = $table . '.' . $relation['column'];
+                            $builder->whereIn($table . '.' . $relation['column'], $ids);
+
+                        } else {
+                            $selectScopes[] = $baseTable . '.*';
+                            foreach ($relation['on'] as $first => $second) {
+                                $builder->join($table, $baseTable . '.' . $first, '=', $table . '.' . $second);
+                            }
+                            $selectScopes[] = $table . '.' . $relation['column'];
+                            self::addClause($builder, $filter['type'], $table . '.' . $relation['column'], $query, $operandToUse);
                         }
-                        $selectScopes[] = $table . '.' . $relation['column'];
-                        self::addClause($builder, $filter['type'], $table . '.' . $relation['column'], $query, $operandToUse);
+
+
                     } else {
+
                         if (isset($relation['has_many_trough'])) {
                             $baseTable = $relation['has_many_trough'];
                         }
@@ -155,6 +180,7 @@ class Search implements FilterInterface
                     self::addClause($builder, $filter['type'], $baseTable . '.' . $filter['name'], $query, $operandToUse);
                 }
             }
+
         } catch (Exception $e) {
         }
 
@@ -163,6 +189,14 @@ class Search implements FilterInterface
         return $builder;
     }
 
+    /**
+     * @param array $relation
+     * @return bool
+     */
+    public static function isDeepRelationSearch (array $relation): bool
+    {
+        return isset($relation['target_model']) && isset($relation['target_model_columns']);
+    }
 
     /**
      * Get Operand
@@ -174,14 +208,14 @@ class Search implements FilterInterface
      * @static
      * @return array
      */
-    public static function getOperand(string $input)
+    public static function getOperand (string $input)
     {
         $operandToUse = '=';
         $input = preg_replace_callback(
             static::$operandRegex, function ($matchedOperand) use (&$operandToUse) {
             $operandToUse = $matchedOperand[1];
             return '';
-        }, $input
+        },  $input
         );
 
         if (!in_array($operandToUse, static::$operands) || $operandToUse === '=') {
@@ -193,14 +227,14 @@ class Search implements FilterInterface
 
     /**
      * @param Builder $builder
-     * @param string  $type
-     * @param string  $where
+     * @param string $type
+     * @param string $where
      * @param         $query
-     * @param null    $operandToUse
+     * @param null $operandToUse
      *
      * @return Builder
      */
-    protected static function addCustomWhereClause(Builder $builder, string $type, string $where, $query, $operandToUse)
+    protected static function addCustomWhereClause (Builder $builder, string $type, string $where, $query, $operandToUse)
     {
         if (in_array($type, static::$types['string'])) {
             switch ($operandToUse) {
@@ -259,14 +293,14 @@ class Search implements FilterInterface
 
     /**
      * @param Builder $builder
-     * @param string  $type
-     * @param string  $where
+     * @param string $type
+     * @param string $where
      * @param         $query
-     * @param null    $operandToUse
+     * @param null $operandToUse
      *
      * @return Builder
      */
-    protected static function addClause(Builder $builder, string $type, string $where, $query, $operandToUse = null)
+    protected static function addClause (Builder $builder, string $type, string $where, $query, $operandToUse = null)
     {
         if ($operandToUse !== null) {
             return static::addCustomWhereClause($builder, $type, $where, $query, $operandToUse);
@@ -303,12 +337,12 @@ class Search implements FilterInterface
      * If 2 dates are provided, we're gonna search in between those dates, otherwise, we'll search on the date specific.
      *
      * @param Builder $builder
-     * @param string  $column
-     * @param array   $dates
+     * @param string $column
+     * @param array $dates
      *
      * @return Builder
      */
-    public static function filterByDate(Builder $builder, string $column, array $dates)
+    public static function filterByDate (Builder $builder, string $column, array $dates)
     {
         /** @var Carbon[] $validDates */
         $validDates = [];
@@ -323,9 +357,9 @@ class Search implements FilterInterface
 
             $builder->whereBetween(
                 $column, [
-                $start->format("Y-m-d") . ' 00:00:00',
-                $end->format('Y-m-d') . ' 23:59:59',
-            ]
+                           $start->format("Y-m-d") . ' 00:00:00',
+                           $end->format('Y-m-d') . ' 23:59:59',
+                       ]
             );
         } else {
             if (count($validDates) == 1) {
@@ -343,7 +377,7 @@ class Search implements FilterInterface
      *
      * @return int|null
      */
-    public static function castBooleanValue($input)
+    public static function castBooleanValue ($input)
     {
         if (in_array($input, self::$positives)) {
             return 1;
