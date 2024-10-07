@@ -7,6 +7,7 @@
 
 namespace Simianbv\Search\Search;
 
+use Illuminate\Support\Facades\Log;
 use Simianbv\Search\Contracts\FilterInterface;
 use Simianbv\Search\FilterGenerator;
 use Carbon\Carbon;
@@ -94,6 +95,7 @@ class Search implements FilterInterface
         $sets = [];
         $filters = [];
 
+
         // if the value is a valid string ( defaults to array )
         if (is_string($value)) {
             $sets = explode(self::$separator, $value);
@@ -106,6 +108,7 @@ class Search implements FilterInterface
 
         try {
             $columns = (new FilterGenerator($builder->getModel()))->getFilters();
+
             $baseTable = $builder->getModel()->getTable();
 
             if (is_array($builder->getQuery()->columns)) {
@@ -115,8 +118,8 @@ class Search implements FilterInterface
             }
 
             foreach ($sets as $column => $set) {
-                list($set, $operandToUse) = static::getOperand($set);
-                list($column, $query) = explode('=', $set);
+                [$set, $operandToUse] = static::getOperand($set);
+                [$column, $query] = explode('=', $set);
 
                 $query = rtrim(trim($query));
 
@@ -133,12 +136,12 @@ class Search implements FilterInterface
                     $column = end($parts);
                 }
                 $filter = $columns[$column];
+
                 if ($filter['relation']) {
                     $relation = $builder->getModel()->filters['relations'][$filter['name']];
 
                     if ($originalColumn && $table && $table !== $baseTable) {
                         if (self::isDeepRelationSearch($relation)) {
-
                             $deep = (new $relation['target_model'])->newQuery();
 
                             foreach ($relation['target_model_columns'] as $column) {
@@ -155,19 +158,15 @@ class Search implements FilterInterface
                             }
                             $selectScopes[] = $table . '.' . $relation['column'];
                             $builder->whereIn($table . '.' . $relation['column'], $ids);
-
                         } else {
                             $selectScopes[] = $baseTable . '.*';
                             foreach ($relation['on'] as $first => $second) {
                                 $builder->join($table, $baseTable . '.' . $first, '=', $table . '.' . $second);
                             }
                             $selectScopes[] = $table . '.' . $relation['column'];
-                            self::addClause($builder, $filter['type'], $table . '.' . $relation['column'], $query, $operandToUse);
+                            self::addClause($builder, $filter['type'], $table . '.' . $relation['column'], $query, $filter, $operandToUse);
                         }
-
-
                     } else {
-
                         if (isset($relation['has_many_trough'])) {
                             $baseTable = $relation['has_many_trough'];
                         }
@@ -177,12 +176,13 @@ class Search implements FilterInterface
                         }
                     }
                 } else {
-                    self::addClause($builder, $filter['type'], $baseTable . '.' . $filter['name'], $query, $operandToUse);
+                    self::addClause($builder, $filter['type'], $baseTable . '.' . $filter['name'], $query, $filter, $operandToUse);
                 }
             }
-
         } catch (Exception $e) {
+            Log::error("Unable to process filter request, the error given is '" . $e->getMessage() . "'");
         }
+
 
         $builder->select($selectScopes);
 
@@ -212,10 +212,12 @@ class Search implements FilterInterface
     {
         $operandToUse = '=';
         $input = preg_replace_callback(
-            static::$operandRegex, function ($matchedOperand) use (&$operandToUse) {
-            $operandToUse = $matchedOperand[1];
-            return '';
-        },  $input
+            static::$operandRegex,
+            function ($matchedOperand) use (&$operandToUse) {
+                $operandToUse = $matchedOperand[1];
+                return '';
+            },
+            $input
         );
 
         if (!in_array($operandToUse, static::$operands) || $operandToUse === '=') {
@@ -300,7 +302,7 @@ class Search implements FilterInterface
      *
      * @return Builder
      */
-    protected static function addClause (Builder $builder, string $type, string $where, $query, $operandToUse = null)
+    protected static function addClause (Builder $builder, string $type, string $where, $query, array $column, $operandToUse = null)
     {
         if ($operandToUse !== null) {
             return static::addCustomWhereClause($builder, $type, $where, $query, $operandToUse);
@@ -312,6 +314,18 @@ class Search implements FilterInterface
                     break;
                 case 'bool':
                 case 'boolean':
+
+                    // in case you want to cast the value to a null/not null value
+                    if (isset($column['column_type']) && $column['column_type'] !== 'bool') {
+                        $query = self::castBooleanValue($query);
+                        if ($query === 1 || $query === true) {
+                            $builder->whereNotNull($where);
+                        } else {
+                            $builder->whereNull($where);
+                        }
+                        break;
+                    }
+
                     $query = self::castBooleanValue($query);
                     if ($query !== null) {
                         $builder->where($where, '=', $query);
