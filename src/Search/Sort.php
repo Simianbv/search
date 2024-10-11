@@ -43,6 +43,21 @@ class Sort implements FilterInterface
                 if (isset($relation['column'])) {
                     $sort['name'] = $table . $relation['column'];
                 }
+
+                if (isset($relation['on']) && isset($relation['model']) && isset($relation['column'])) {
+                    /** @var Model $relatedModel */
+                    $className = $relation['model'];
+                    $relatedModel = (new $className);
+
+                    foreach ($relation['on'] as $k => $v) {
+                        $local = $k;
+                        $on = $v;
+                    }
+
+                    $builder->join($relatedModel->getTable(), $table . '.' . $local, '=', $relatedModel->getTable() . '.' . $on);
+                    $sort['name'] = $relatedModel->getTable() . '.' . $relation['column'];
+                }
+                
             } else {
                 if (strpos($sort['name'], '.') === false) {
                     $sort['name'] = $table . $sort['name'];
