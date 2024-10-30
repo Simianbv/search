@@ -146,7 +146,13 @@ class FilterGenerator
             }
         }
 
+        if($filters[$name]['type'] == 'hidden'){
+            unset($filters[$name]);
+        }
+        
         $filters = array_merge($filters, $this->createRelationOptions($relationColumns));
+
+        
 
         $this->filters = $filters;
 
