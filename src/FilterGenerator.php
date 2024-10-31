@@ -146,8 +146,10 @@ class FilterGenerator
             }
         }
 
-        if($filters[$name]['type'] == 'hidden'){
-            unset($filters[$name]);
+        foreach ($filters as $idx => $filter) {
+            if (isset($filter['type']) && $filter['type'] == 'hidden') {
+                unset($filters[$idx]);
+            }
         }
         
         $filters = array_merge($filters, $this->createRelationOptions($relationColumns));
