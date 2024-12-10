@@ -7,6 +7,7 @@
 
 namespace Simianbv\Search\Search;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Simianbv\Search\Contracts\FilterInterface;
 use Simianbv\Search\FilterGenerator;
