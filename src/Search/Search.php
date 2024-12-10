@@ -112,7 +112,20 @@ class Search implements FilterInterface
             $baseTable = $builder->getModel()->getTable();
 
             if (is_array($builder->getQuery()->columns)) {
-                $selectScopes = array_unique(array_merge($builder->getQuery()->columns, [$builder->getModel()->getTable() . '.*']));
+
+                $selectScopes = array_unique($builder->getQuery()->columns);
+
+                $includeBaseTable = false;
+                foreach ($selectScopes as $scope) {
+                    if (Str::startsWith($scope, $baseTable . '.')) {
+                        $includeBaseTable = true;
+                    }
+                }
+
+                if (!$includeBaseTable) {
+                    $selectScopes[] = $builder->getModel()->getTable() . '.*';
+                }
+            
             } else {
                 $selectScopes = [$builder->getModel()->getTable() . '.*'];
             }
