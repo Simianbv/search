@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -93,9 +94,13 @@ class FilterGenerator
         if (!$this->filters) {
             if ($this->enableCache) {
                 $this->filters = persist_cache(
-                    $this->getCacheKey(), function () use ($generator) {
-                    return $generator->build();
-                },  60 * 24, ['filter']);
+                    $this->getCacheKey(),
+                    function () use ($generator) {
+                        return $generator->build();
+                    },
+                    60 * 24,
+                    ['filter']
+                );
             } else {
                 return $generator->build();
             }
@@ -151,10 +156,9 @@ class FilterGenerator
                 unset($filters[$idx]);
             }
         }
-        
+
         $filters = array_merge($filters, $this->createRelationOptions($relationColumns));
 
-        
 
         $this->filters = $filters;
 
@@ -181,17 +185,33 @@ class FilterGenerator
 
             // Set up the correct field type
             $type = $relationColumn['type'] ?? 'select';
+            $component = $type;
 
-            if ($searchable) {
+            if ($searchable || in_array($component, ['autocomplete', 'search'])) {
+                $searchable = true;
                 $type = 'string';
             }
 
             $relations[$relationName] = [
-                'type'     => self::getValidFilterType($type),
-                'name'     => $relationName,
-                'relation' => true,
-                'label'    => $label,
+                'type'      => self::getValidFilterType($type),
+                'component' => $component,
+                'name'      => $relationName,
+                'relation'  => true,
+                'label'     => $label,
             ];
+
+            if (isset($relationColumn['properties'])) {
+                $relations[$relationName]['column'] = $relationColumn['column'] ?? null;
+                $relations[$relationName]['properties'] = $relationColumn['properties'];
+                $relations[$relationName]['properties']['field'] = 'id';
+                if (config('app.env') == 'local' && isset($relationColumn['properties']['dev_url'])) {
+                    $relations[$relationName]['properties']['url'] = $relationColumn['properties']['dev_url'];
+                    unset($relations[$relationName]['properties']['dev_url']);
+                }
+                if (isset($relationColumn['properties']['field'])) {
+                    $relations[$relationName]['properties']['field'] = $relationColumn['properties']['field'];
+                }
+            }
 
             if (!$searchable) {
                 $relations[$relationName]['options'] = [];
@@ -309,7 +329,6 @@ class FilterGenerator
 
         $builder = $this->model->getConnection()->getSchemaBuilder();
         $columns = $builder->getColumnListing($this->model->getTable());
-
 
         DB::getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
