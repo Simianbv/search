@@ -193,14 +193,14 @@ class FilterGenerator
             }
 
             $relations[$relationName] = [
-                'type'      => self::getValidFilterType($type),
-                'component' => $component,
-                'name'      => $relationName,
-                'relation'  => true,
-                'label'     => $label,
+                'type'     => self::getValidFilterType($type),
+                'name'     => $relationName,
+                'relation' => true,
+                'label'    => $label,
             ];
 
             if (isset($relationColumn['properties'])) {
+                $relations[$relationName]['component'] = $component;
                 $relations[$relationName]['column'] = $relationColumn['column'] ?? null;
                 $relations[$relationName]['properties'] = $relationColumn['properties'];
                 $relations[$relationName]['properties']['field'] = 'id';
@@ -329,6 +329,7 @@ class FilterGenerator
 
         $builder = $this->model->getConnection()->getSchemaBuilder();
         $columns = $builder->getColumnListing($this->model->getTable());
+
 
         DB::getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
