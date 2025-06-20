@@ -199,6 +199,10 @@ class FilterGenerator
                 'label'    => $label,
             ];
 
+            if (isset($relationColumn['as']) && $relationColumn['as'] !== '') {
+                $relations[$relationName]['as'] = $relationColumn['as'];
+            }
+
             if (isset($relationColumn['properties'])) {
                 $relations[$relationName]['component'] = $component;
                 $relations[$relationName]['column'] = $relationColumn['column'] ?? null;
@@ -261,11 +265,17 @@ class FilterGenerator
                     }
                 }
                 $relationOptions = $builder->get();
-                foreach ($relationOptions as $option) {
-                    $relations[$relationName]['options'][] = [
-                        'id'    => $option->{$option->getKeyName()},
-                        'label' => $this->getRelationSelectAsText($option, $originalSelect),
-                    ];
+                foreach ($relationOptions as $i => $option) {
+                    if (isset($relationColumn['as'])) {
+                        $relations[$relationName]['options'][$i] = $option;
+                        $relations[$relationName]['options'][$i]['id'] = $option->{$option->getKeyName()};
+                        $relations[$relationName]['options'][$i]['label'] = $this->getRelationSelectAsText($option, $originalSelect);
+                    } else {
+                        $relations[$relationName]['options'][] = [
+                            'id'    => $option->{$option->getKeyName()},
+                            'label' => $this->getRelationSelectAsText($option, $originalSelect),
+                        ];
+                    }
                 }
             }
         }
