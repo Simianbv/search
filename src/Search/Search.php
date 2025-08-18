@@ -345,6 +345,10 @@ class Search implements FilterInterface
                         $builder->where($where, '=', $query);
                     }
                     break;
+                case 'select':
+                    if ($query !== null) {
+                        $builder->where($where, '=', $query);
+                    }
                 case 'number':
                 case 'integer':
                 case 'int':
