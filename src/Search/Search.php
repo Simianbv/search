@@ -184,7 +184,24 @@ class Search implements FilterInterface
                         if (isset($relation['has_many_trough'])) {
                             $baseTable = $relation['has_many_trough'];
                         }
-                        $builder->where($baseTable . '.' . $relation['column'], $operandToUse ?? '=', $query);
+
+                        if (isset($relation['many_to_many_trough']) && 
+                            isset($relation['many_to_many_trough']['model']) && 
+                            isset($relation['many_to_many_trough']['column']) && 
+                            isset($relation['many_to_many_trough']['where'])
+                           ) {
+                          $model = new $relation['many_to_many_trough']['model'];
+                            $results = $model->newQuery()
+                                ->select($relation['many_to_many_trough']['column'])
+                                ->where($relation['many_to_many_trough']['where'], $query)
+                                ->get()
+                                ->pluck($relation['many_to_many_trough']['column'])
+                                ->toArray();
+                            $builder->whereIn($relation['column'], $results);
+                        } else {
+                            $builder->where($baseTable . '.' . $relation['column'], $operandToUse ?? '=', $query);
+                        }
+                
                         if ($originalColumn) {
                             $filter['name'] = $originalColumn;
                         }
