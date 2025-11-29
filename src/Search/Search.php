@@ -14,6 +14,7 @@ use Simianbv\Search\FilterGenerator;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Expression;
 
 /**
  * @class   Search
@@ -114,11 +115,18 @@ class Search implements FilterInterface
 
             if (is_array($builder->getQuery()->columns)) {
 
-                $selectScopes = array_unique($builder->getQuery()->columns);
+                $columnsArray = array_map(function ($column) use ($builder) {
+                    if ($column instanceof Expression) {
+                        return $column->getValue($builder->getQuery()->getGrammar());
+                    }
+                    return $column;
+                }, $builder->getQuery()->columns);
+
+                $selectScopes = array_unique($columnsArray);
 
                 $includeBaseTable = false;
                 foreach ($selectScopes as $scope) {
-                    if (Str::startsWith($scope, $baseTable . '.')) {
+                    if (is_string($scope) && Str::startsWith($scope, $baseTable . '.')) {
                         $includeBaseTable = true;
                     }
                 }
