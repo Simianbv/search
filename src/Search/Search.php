@@ -115,12 +115,9 @@ class Search implements FilterInterface
 
             if (is_array($builder->getQuery()->columns)) {
 
-                $columnsArray = array_map(function ($column) use ($builder) {
-                    if ($column instanceof Expression) {
-                        return $column->getValue($builder->getQuery()->getGrammar());
-                    }
-                    return $column;
-                }, $builder->getQuery()->columns);
+                $columnsArray = array_filter($builder->getQuery()->columns, function ($column) {
+                    return !($column instanceof Expression);
+                });
 
                 $selectScopes = array_unique($columnsArray);
 
