@@ -115,9 +115,20 @@ class Search implements FilterInterface
 
             if (is_array($builder->getQuery()->columns)) {
 
-                $columnsArray = $builder->getQuery()->columns;
+                // Separate Expression instances from string columns
+                $expressions = [];
+                $stringColumns = [];
 
-                $selectScopes = array_unique($columnsArray);
+                foreach ($builder->getQuery()->columns as $column) {
+                    if ($column instanceof Expression) {
+                        $expressions[] = $column;
+                    } else {
+                        $stringColumns[] = $column;
+                    }
+                }
+
+                // Remove duplicates only from string columns
+                $selectScopes = array_unique($stringColumns);
 
                 $includeBaseTable = false;
                 foreach ($selectScopes as $scope) {
@@ -129,6 +140,9 @@ class Search implements FilterInterface
                 if (!$includeBaseTable) {
                     $selectScopes[] = $builder->getModel()->getTable() . '.*';
                 }
+
+                // Merge back the Expression instances (withCount, etc.)
+                $selectScopes = array_merge($selectScopes, $expressions);
 
             } else {
                 $selectScopes = [$builder->getModel()->getTable() . '.*'];
