@@ -115,9 +115,7 @@ class Search implements FilterInterface
 
             if (is_array($builder->getQuery()->columns)) {
 
-                $columnsArray = array_filter($builder->getQuery()->columns, function ($column) {
-                    return !($column instanceof Expression);
-                });
+                $columnsArray = $builder->getQuery()->columns;
 
                 $selectScopes = array_unique($columnsArray);
 
@@ -131,7 +129,7 @@ class Search implements FilterInterface
                 if (!$includeBaseTable) {
                     $selectScopes[] = $builder->getModel()->getTable() . '.*';
                 }
-            
+
             } else {
                 $selectScopes = [$builder->getModel()->getTable() . '.*'];
             }
