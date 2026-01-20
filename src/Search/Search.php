@@ -96,7 +96,8 @@ class Search implements FilterInterface
     {
         $sets = [];
         $filters = [];
-
+        $expressions = [];
+        $selectScopes = [];
 
         // if the value is a valid string ( defaults to array )
         if (is_string($value)) {
@@ -115,10 +116,7 @@ class Search implements FilterInterface
 
             if (is_array($builder->getQuery()->columns)) {
 
-                // Separate Expression instances from string columns
-                $expressions = [];
                 $stringColumns = [];
-
                 foreach ($builder->getQuery()->columns as $column) {
                     if ($column instanceof Expression) {
                         $expressions[] = $column;
@@ -140,9 +138,6 @@ class Search implements FilterInterface
                 if (!$includeBaseTable) {
                     $selectScopes[] = $builder->getModel()->getTable() . '.*';
                 }
-
-                // Merge back the Expression instances (withCount, etc.)
-                $selectScopes = array_merge($selectScopes, $expressions);
 
             } else {
                 $selectScopes = [$builder->getModel()->getTable() . '.*'];
@@ -231,8 +226,12 @@ class Search implements FilterInterface
             Log::error("Unable to process filter request, the error given is '" . $e->getMessage() . "'");
         }
 
-
+        $bindings = $builder->getRawBindings()['select'];
         $builder->select($selectScopes);
+        foreach($expressions as $expression) {
+            $builder->selectRaw($expression);
+        }
+        $builder->setBindings(array_merge($bindings,$builder->getRawBindings()['select']),'select');
 
         return $builder;
     }
