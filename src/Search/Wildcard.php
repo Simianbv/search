@@ -178,7 +178,7 @@ class Wildcard extends BaseSearch implements FilterInterface
         // if there's specific columns, merge those with the origin
         if (is_array($builder->getQuery()->columns)) {
             foreach($builder->getQuery()->columns as $column) {
-                if(str_contains($column, '.')) {
+                if(is_string($column) && str_contains($column, '.')) {
                     $table = explode('.', $column)[0];
                     if($table == $builder->getModel()->getTable()){
                         $this->scopes = [];
@@ -186,7 +186,7 @@ class Wildcard extends BaseSearch implements FilterInterface
                     }
                 }
             }
-            $this->scopes = array_unique(array_merge($builder->getQuery()->columns, $this->scopes));
+            $this->scopes = array_unique(array_merge($builder->getQuery()->columns, $this->scopes), SORT_REGULAR);
         }
         return $this->scopes;
     }
