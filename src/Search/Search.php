@@ -55,9 +55,11 @@ class Search implements FilterInterface
         '<',
         '<=',
         '=',
+        '==',
         '>',
         '>=',
         '!=',
+        '!==',
         '%*',
         '*%',
         '*',
@@ -289,16 +291,19 @@ class Search implements FilterInterface
             switch ($operandToUse) {
                 case '%*': // ends with
                     return $builder->where($where, 'LIKE', '%' . $query);
-                    break;
                 case '*%': // starts with
                     return $builder->where($where, 'LIKE', $query . '%');
-                    break;
+                case '!=': // not like
+                    return $builder->where($where, 'NOT LIKE', '%' . $query . '%');
+                case '==': // exact match
+                    return $builder->where($where, '=', $query);
+                case '!==': // exact not match
+                    return $builder->where($where, '!=', $query);
                 case '=':
                 case 'LIKE':
                 case '*':
                 default:
                     return $builder->where($where, 'LIKE', '%' . $query . '%');
-                    break;
             }
         }
 
