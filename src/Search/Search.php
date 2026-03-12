@@ -165,7 +165,7 @@ class Search implements FilterInterface
                 }
                 $filter = $columns[$column];
 
-                if (isset($filter['relation'])) {
+                if (!empty($filter['relation'])) {
                     $relation = $builder->getModel()->filters['relations'][$filter['name']];
 
                     if ($originalColumn && $table && $table !== $baseTable) {
