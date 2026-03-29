@@ -1,6 +1,6 @@
 {
   "name": "simianbv/search",
-  "description": "A utility package that works on top of laravel",
+  "description": "A utility package that works on top of laravel.",
   "type": "project",
   "keywords": [
     "laravel",
