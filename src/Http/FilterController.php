@@ -55,6 +55,11 @@ class FilterController extends Controller
 
             $model = '\\App\\Models\\' . ucfirst($model);
             $filterCacheKey = 'filter:'.strtolower(str_replace('\\', '.',$model));
+
+            if (request()->get('cache') === 'false') {
+                Cache::forget($filterCacheKey);
+            }
+      
             if($response = Cache::get($filterCacheKey)){
                 return $response;
             }
