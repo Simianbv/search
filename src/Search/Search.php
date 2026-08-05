@@ -395,7 +395,7 @@ class Search implements FilterInterface
                 case 'datetime':
                 case 'date':
                     $dates = explode(',', $query);
-                    self::filterByDate($builder, $where, $dates);
+                    self::filterByDate($builder, $where, $dates, $type);
             }
 
             return $builder;
@@ -412,7 +412,7 @@ class Search implements FilterInterface
      *
      * @return Builder
      */
-    public static function filterByDate (Builder $builder, string $column, array $dates)
+    public static function filterByDate (Builder $builder, string $column, array $dates, $type = null)
     {
         /** @var Carbon[] $validDates */
         $validDates = [];
@@ -421,19 +421,30 @@ class Search implements FilterInterface
             $validDates[] = Carbon::createFromTimestamp(strtotime($date));
         }
 
+        $isDateOnly = $type === 'date';
+
         if (count($validDates) > 1) {
             $start = $validDates[0];
             $end = $validDates[1];
 
             $builder->whereBetween(
                 $column, [
-                           $start->format("Y-m-d") . ' 00:00:00',
-                           $end->format('Y-m-d') . ' 23:59:59',
-                       ]
+                    $start->format("Y-m-d") . ' 00:00:00',
+                    $end->format('Y-m-d') . ' 23:59:59',
+                ]
             );
         } else {
             if (count($validDates) == 1) {
-                $builder->where($column, $validDates[0]->format('Y-m-d'));
+                if ($isDateOnly) {
+                    $builder->where($column, $validDates[0]->format('Y-m-d'));
+                } else {
+                    $builder->whereBetween(
+                        $column, [
+                            $validDates[0]->format('Y-m-d') . ' 00:00:00',
+                            $validDates[0]->format('Y-m-d') . ' 23:59:59',
+                        ]
+                    );
+                }
             }
         }
 
