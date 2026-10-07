@@ -88,13 +88,21 @@ class Sort implements FilterInterface
      */
     public static function sort (Builder $builder, string $column, string $direction)
     {
+        // The column comes straight from the request (?sort=), so only accept a plain
+        // `column` or `table.column` identifier and ignore anything else.
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/', $column)) {
+            return $builder;
+        }
+
         $direction = strtoupper($direction);
         if (!in_array($direction, self::$sortableDirections)) {
             $direction = self::$sortableDirections['default'];
         }
 
         if ($direction == 'asc' || $direction == 'ASC') {
-            return $builder->orderBy(DB::raw('ISNULL(' . $column . '), ' . $column), 'ASC');
+            $wrapped = $builder->getQuery()->getGrammar()->wrap($column);
+
+            return $builder->orderBy(DB::raw('ISNULL(' . $wrapped . '), ' . $wrapped), 'ASC');
         }
 
 
